@@ -4,7 +4,7 @@ require_once 'keygen.php';
 
 class HOTP{
     private $keygenService;
-    private $counter = 12314141;
+    private $counter = 1;
     private $digits = 6;
 
     public function __construct(){
@@ -19,7 +19,7 @@ class HOTP{
 
         $otp_value = $SBits % pow(10, $this->digits);
 
-        return $otp_value;
+        return str_pad($otp_value, $this->digits, 0, STR_PAD_LEFT);
     }
 
     private function generateHashValue($key, $counter){
@@ -27,19 +27,25 @@ class HOTP{
         return $output;
     }
 
+    /**
+     * Dynamic truncation of the HMAC-SHA-1 value to generate a 4byte dynamic binary code from the 160 bit value.
+     * @param string $hash_value HMAC-SHA-1 Value
+     * @return int 31-bit $truncated value
+     * 
+     */
+
     private function dynamicTruncation($hash_value){
         /**
          * Take last byte of $hash_value and perform a bitwise AND operation with 0x0F(decimal 15) to calculate an offset;
-         * The offset is a 4bit integer derived fro last byte of HMAC-SHA-1 result.
+         * The offset is a 4bit integer derived from last byte of HMAC-SHA-1 result.
+         * 
         **/
-        $offsetBits = ord($hash_value[19]) & 0x0F;
+        $offset = ord($hash_value[19]) & 0x0F;
         
-        echo($offsetBits);
-        $truncated = ((ord($hash_value[$offsetBits]) & 0x7F) << 24) |
-                    ((ord($hash_value[$offsetBits + 1]) & 0xFF) << 16) |
-                    ((ord($hash_value[$offsetBits + 2]) & 0xFF) << 8) |
-                    (ord($hash_value[$offsetBits + 3]) & 0xFF);
-
+        $truncated = ((ord($hash_value[$offset]) & 0x7F) << 24) |
+                    ((ord($hash_value[$offset + 1]) & 0xFF) << 16) |
+                    ((ord($hash_value[$offset + 2]) & 0xFF) << 8) |
+                    (ord($hash_value[$offset + 3]) & 0xFF);
 
         return $truncated;
     }

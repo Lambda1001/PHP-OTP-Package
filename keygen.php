@@ -1,8 +1,5 @@
 <?php
 
-require_once 'vendor/autoload.php';
-
-
 class KeyGen{
     private $key;
     private $key_length = 32;
