@@ -4,16 +4,16 @@ require_once 'keygen.php';
 
 class HOTP{
     private $keygenService;
-    private $counter = 1;
+    private $lookahead_window = 5;
     private $digits = 6;
 
     public function __construct(){
         $this->keygenService = new KeyGen();
     }
 
-    public function getHOTPValue(){
+    public function getHOTPValue($counter){
         $key = $this->keygenService->readEncodedKey();
-        $string = $this->generateHashValue($key, $this->counter);
+        $string = $this->generateHashValue($key, $counter);
         
         $SBits = $this->dynamicTruncation($string);
 
@@ -35,11 +35,6 @@ class HOTP{
      */
 
     private function dynamicTruncation($hash_value){
-        /**
-         * Take last byte of $hash_value and perform a bitwise AND operation with 0x0F(decimal 15) to calculate an offset;
-         * The offset is a 4bit integer derived from last byte of HMAC-SHA-1 result.
-         * 
-        **/
         $offset = ord($hash_value[19]) & 0x0F;
         
         $truncated = ((ord($hash_value[$offset]) & 0x7F) << 24) |
@@ -48,5 +43,26 @@ class HOTP{
                     (ord($hash_value[$offset + 3]) & 0xFF);
 
         return $truncated;
+    }
+
+
+    public function verifyOTP($clientOTP, $counter){
+        $output = [];
+
+        for($i = $counter; $i <= $counter + $this->lookahead_window; ++$i){
+            if(hash_equals($this->getHOTPValue($i), $clientOTP)){
+                ++$counter;
+
+                return $output = [
+                    'verified' => true,
+                    'message' => 'User successfully authenticated',
+                ];
+            }
+        }
+
+        return $output = [
+            'verified' => false,
+            'message' => 'Error during authentication',
+        ];
     }
 }

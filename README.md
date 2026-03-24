@@ -6,3 +6,5 @@ Kevin Andeka <andeka.kev@gmail.com>
 
 # Current Progress
 HOTP algorithm successfully implemented. Testing and further refinements such as security and optimization to follow.
+HOTP code generation successfull. Verification of code also implemented. 
+Implementation of security (Throttling feature) to follow.
